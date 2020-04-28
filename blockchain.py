@@ -7,12 +7,13 @@ import time
 class Block:
     def __init__(self, index, transactions, timestamp, previous_hash):
         # index = unique id of blocks
-        # transactions = list of data
-        # timestamp = time of generation of the block
-        # previous_hash = the hash of previous element for keep blocks connected
         self.index = index
+        # transactions = list of data
         self.transactions = transactions
+        # timestamp = time of generation of the block
         self.timestamp = timestamp
+        # previous_hash = the hash of previous element for keep blocks connected
+        self.previous_hash = previous_hash
 
     # hash function is a function that takes data of any size and produce data of a fixed size (a hash)
     # is generally used to identify the input
@@ -55,10 +56,10 @@ class Blockchain:
     difficulty = 2
 
     def __init__(self, nonce):
+        # transactions without mining
+        self.unconfirmed_transactions = []
         self.chain = []
         self.create_genesis_block()
-        # nonce is a number that we can keep on changin until we get a hash that satisfies our constrain
-        self.nonce = nonce
     
     # create the first block of the blockchain
     # the block has index 0, previous_hash as 0 and a valid hash
@@ -79,11 +80,32 @@ class Blockchain:
         # To do this we use the nonce. -> This technique is a simplified version of the Hashcash algorithm used in bitcoin.
         # proof of work is difficult to compute but very easy to verify once you figure out the nonce
     def proof_of_work(self, block):
+        # nonce is a number that we can keep on changin until we get a hash that satisfies our constrain
         block.nonce = 0
         computed_hash = block.compute_hash()
         while not computed_hash.startswith('0' * Blockchain.difficulty):
             block.nonce += 1
             computed_hash = block.compute_hash()
         return computed_hash
+    
+    # Add a new unconfirmed transaction
+    def add_new_transaction(self, transaction):
+        self.unconfirmed_transactions.append(transaction)
+
+    # Mine the transaction
+    def mine(self):
+        if not self.unconfirmed_transactions:
+            return False
+        last_block = self.last_block
+        new_block = Block(index=last_block.index + 1,
+                          transactions=self.unconfirmed_transactions,
+                          timestamp=time.time(),
+                          previous_hash=last_block.hash)
+        proof = self.proof_of_work(new_block)
+        self.add_block(new_block, proof)
+        self.unconfirmed_transactions = []
+        return new_block.index
+
+
 
     
